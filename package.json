@@ -2,13 +2,15 @@
   "name": "therra-umkm-bot",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.21.2",
-    "pg": "^8.11.3"
+    "pg": "^8.11.3",
+    "@whiskeysockets/baileys": "^6.7.8",
+    "node-telegram-bot-api": "^0.64.0"
   },
   "engines": {
     "node": ">=18"

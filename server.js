@@ -1,5 +1,7 @@
 const express = require("express");
 const { Client } = require("pg");
+const { startWhatsAppBot } = require("./bot-config/whatsapp");
+const { startTelegramBot } = require("./bot-config/telegram");
 
 const app = express();
 app.use(express.json());
@@ -163,4 +165,6 @@ app.get("/health", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Therra Bot Server running on port ${PORT}`);
+  startWhatsAppBot();
+  startTelegramBot();
 });
