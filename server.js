@@ -1,7 +1,7 @@
 const express = require("express");
 const { Client } = require("pg");
 const { encryptText, decryptText, randomSecret } = require("./utils/crypto");
-const { startWhatsAppBot } = require("./bot-config/whatsapp");
+const { startWhatsAppSession } = require("./bot-config/whatsapp");
 
 const app = express();
 app.use(express.json());
@@ -193,7 +193,6 @@ app.get("/health", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Therra Bot Server running on port ${PORT}`);
-  startWhatsAppBot();
 });
 // Telegram setup endpoint
 app.post("/api/integrations/telegram/setup", async (req, res) => {
@@ -278,5 +277,31 @@ app.post("/api/telegram/webhook/:userId", async (req, res) => {
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: "Webhook handling failed" });
+  }
+});
+
+app.post("/api/integrations/whatsapp/start", async (req, res) => {
+  try {
+    const { userId } = req.body || {};
+    if (!userId) {
+      return res.status(400).json({ error: "userId required" });
+    }
+    let row = await db.query(
+      "SELECT webhook_secret FROM bot_config WHERE user_id = $1 AND channel = 'whatsapp'",
+      [userId],
+    );
+    let secret = row.rowCount > 0 ? row.rows[0].webhook_secret : randomSecret();
+    if (row.rowCount === 0) {
+      await db.query(
+        `INSERT INTO bot_config(user_id, channel, bot_token, bot_id, webhook_secret, status)
+         VALUES($1, 'whatsapp', '', NULL, $2, 'active')
+         ON CONFLICT (user_id, channel) DO UPDATE SET webhook_secret = EXCLUDED.webhook_secret, status = 'active', updated_at = NOW()`,
+        [userId, secret],
+      );
+    }
+    const started = await startWhatsAppSession(userId, secret);
+    res.json({ ok: true, started });
+  } catch (e) {
+    res.status(500).json({ error: "WhatsApp start failed" });
   }
 });
